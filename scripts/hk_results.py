@@ -92,6 +92,13 @@ try:
         if up[0].get("drawDate"): nxt.setdefault("date", up[0]["drawDate"][:10])
 except Exception as e:
     print("prochain tirage (API) indisponible :", e)
+# Rien de nouveau : on ne réécrit pas le fichier (pas de commit inutile)
+try:
+    old = json.load(open("hk_results.json"))
+    if old.get("marksix") == res and old.get("next") == nxt:
+        print("inchangé", res[0]["draw"]); sys.exit(0)
+except (OSError, ValueError):
+    pass
 json.dump({"marksix": res, "next": nxt, "updated": datetime.datetime.now(HKT).isoformat(timespec="minutes")},
           open("hk_results.json", "w"), ensure_ascii=False, indent=1)
 print("ok", len(res), res[0]["draw"], res[0]["date"], nxt)
