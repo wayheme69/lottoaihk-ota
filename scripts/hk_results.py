@@ -61,8 +61,10 @@ def schedule():
 if len(sys.argv) > 2 and sys.argv[1] == "--history":
     rows = []
     for y in sys.argv[2:]:
-        for (a, b) in [(f"{y}0101", f"{y}0630"), (f"{y}0701", f"{y}1231")]:
-            rows += [c for c in (clean(x) for x in draws({"startDate": a, "endDate": b, "drawType": "All"})) if c]
+        # l'API refuse les longues périodes : un mois à la fois
+        for m in range(1, 13):
+            end = (datetime.date(int(y) + (m == 12), m % 12 + 1, 1) - datetime.timedelta(days=1)).strftime("%Y%m%d")
+            rows += [c for c in (clean(x) for x in draws({"startDate": f"{y}{m:02d}01", "endDate": end, "drawType": "All"})) if c]
     rows.sort(key=lambda r: r["date"])
     json.dump(rows, open("history.json", "w"), ensure_ascii=False)
     print("history", len(rows)); sys.exit(0)
