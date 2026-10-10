@@ -1,0 +1,37 @@
+name: Update Mark Six results
+
+on:
+  schedule:
+    # Tirage 21:30 heure de Hong Kong (13:30 UTC), résultats publiés vers 22:00-22:30 :
+    # passages ciblés 21:40 → 23:40 Hong Kong, puis un passage toutes les 6 h en filet de sécurité
+    - cron: "10,40 13-15 * * *"
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: results
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch results (official HKJC data)
+        run: python3 scripts/hk_results.py
+      - name: Commit if changed
+        run: |
+          git config user.name "results-bot"
+          git config user.email "actions@github.com"
+          git add hk_results.json
+          if ! git diff --cached --quiet; then
+            git commit -m "results: $(date -u +%Y-%m-%dT%H:%MZ)"
+            git pull --rebase origin main
+            git push
+          else
+            echo "No change."
+          fi
