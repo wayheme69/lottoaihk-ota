@@ -1,0 +1,14 @@
+name: Probe HKJC
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/probe.py
+      - run: |
+          git config user.name "results-bot"; git config user.email "actions@github.com"
+          git add probe.json; git commit -m "probe" || true; git push
