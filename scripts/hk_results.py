@@ -77,7 +77,9 @@ nxt = {}
 try:
     sch = schedule()
     today = datetime.datetime.now(HKT).date().isoformat()
-    fut = [(k, v) for k, v in sch.items() if k > res[0]["date"] and k >= today] or [(k, v) for k, v in sch.items() if k > res[0]["date"]]
+    # Tirages pas encore publiés (dont celui de ce soir, même après minuit), au plus 3 jours en arrière
+    since = (datetime.datetime.now(HKT).date() - datetime.timedelta(days=3)).isoformat()
+    fut = [(k, v) for k, v in sch.items() if k > res[0]["date"] and k >= since]
     if fut: nxt = {"date": fut[0][0], "snowball": fut[0][1]}
     nxt["upcoming"] = [k for k, _ in fut[:12]]
 except Exception as e:
