@@ -1,16 +1,12 @@
-# Sonde : vérifie l'accès à l'API officielle HKJC depuis GitHub Actions et sauvegarde la réponse brute
-import json, urllib.request, sys, datetime, gzip
-Q = open("scripts/marksix.graphql").read()
-def gql(variables):
-    body = json.dumps({"operationName": "marksixResult", "variables": variables, "query": Q}).encode()
-    req = urllib.request.Request("https://info.cld.hkjc.com/graphql/base/", data=body, headers={
-        "Content-Type": "application/json", "Origin": "https://bet.hkjc.com", "Referer": "https://bet.hkjc.com/",
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"})
-    raw = urllib.request.urlopen(req, timeout=60).read()
-    if raw[:2] == b"\x1f\x8b": raw = gzip.decompress(raw)
-    return json.loads(raw)
-out = {"last": gql({"lastNDraw": 5, "drawType": "All"})}
-today = datetime.date.today()
-out["future"] = gql({"startDate": today.strftime("%Y%m%d"), "endDate": (today + datetime.timedelta(days=21)).strftime("%Y%m%d"), "drawType": "All"})
+import json, sys
+sys.argv = ["x"]
+exec(open("scripts/hk_results.py").read().split("SCHEDULE_Q =")[0])
+out = {}
+for name, v in [("n4000", {"lastNDraw": 4000, "drawType": "All"}), ("range", {"startDate": "20250101", "endDate": "20250331", "drawType": "All"}),
+                ("range2", {"startDate": "2025-01-01", "endDate": "2025-03-31", "drawType": "All"}), ("nodt", {"lastNDraw": 3})]:
+    try:
+        d = draws(v); out[name] = {"n": len(d), "first": d[0] if d else None, "last": d[-1] if d else None}
+        if name == "n4000": json.dump([c for c in (clean(x) for x in d) if c], open("history.json", "w"), ensure_ascii=False)
+    except Exception as e: out[name] = str(e)[:300]
 json.dump(out, open("probe.json", "w"), ensure_ascii=False, indent=1)
-print(json.dumps(out, ensure_ascii=False)[:3000])
+print({k: (v if isinstance(v, str) else v["n"]) for k, v in out.items()})
